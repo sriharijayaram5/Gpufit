@@ -17,7 +17,14 @@
 #include "spline_3d_phase_multichannel.cuh"
 #include "lorentz_1d.cuh"
 #include "lorentz_1d_double.cuh"
-#include "lorentz_1d_octet.cuh"
+#include "lorentz_1d_oct.cuh"
+#include "lorentz_1d_oct_single_offset.cuh"
+#include "lorentz_1d_double_single_offset.cuh"
+#include "lorentz_1d_triple.cuh"
+#include "lorentz_1d_quad.cuh"
+#include "gauss_1d_double.cuh"
+#include "double_exponential_decay_1d.cuh"
+#include "single_exponential_decay_1d.cuh"
 
 __device__ void calculate_model(
     ModelID const model_id,
@@ -77,10 +84,31 @@ __device__ void calculate_model(
         calculate_lorentz1d(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
         break;
     case LORENTZ_1D_DOUBLE:
-        calculate_lorentz1d(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
+        calculate_lorentz_1d_double(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
         break;
-    case LORENTZ_1D_OCTET:
-        calculate_lorentz1d(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
+    case LORENTZ_1D_OCT:
+        calculate_lorentz_1d_oct(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
+        break;
+    case LORENTZ_1D_OCT_SINGLE_OFFSET:
+        calculate_lorentz_1d_oct_single_offset(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
+        break;
+    case LORENTZ_1D_DOUBLE_SINGLE_OFFSET:
+        calculate_lorentz_1d_double_single_offset(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
+        break;
+    case LORENTZ_1D_TRIPLE:
+        calculate_lorentz_1d_triple(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
+        break;
+    case LORENTZ_1D_QUAD:
+        calculate_lorentz_1d_quad(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
+        break;
+    case GAUSS_1D_DOUBLE:
+        calculate_gauss_1d_double(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
+        break;
+    case DOUBLE_EXPONENTIAL_DECAY_1D:
+        calculate_double_exponential_decay_1d(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
+        break;
+    case SINGLE_EXPONENTIAL_DECAY_1D:
+        calculate_single_exponential_decay_1d(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
         break;
     default:
         assert(0); // unknown model ID
@@ -91,22 +119,29 @@ void configure_model(ModelID const model_id, int & n_parameters, int & n_dimensi
 {
     switch (model_id)
     {
-    case GAUSS_1D:              n_parameters = 4; n_dimensions = 1; break;
-    case GAUSS_2D:              n_parameters = 5; n_dimensions = 2; break;
-    case GAUSS_2D_ELLIPTIC:     n_parameters = 6; n_dimensions = 2; break;
-    case GAUSS_2D_ROTATED:      n_parameters = 7; n_dimensions = 2; break;
-    case CAUCHY_2D_ELLIPTIC:    n_parameters = 6; n_dimensions = 2; break;
-    case LINEAR_1D:             n_parameters = 2; n_dimensions = 1; break;
-    case FLETCHER_POWELL_HELIX: n_parameters = 3; n_dimensions = 1; break;
-    case BROWN_DENNIS:          n_parameters = 4; n_dimensions = 1; break;
-    case SPLINE_1D:             n_parameters = 3; n_dimensions = 1; break;
-    case SPLINE_2D:             n_parameters = 4; n_dimensions = 2; break;
-    case SPLINE_3D:             n_parameters = 5; n_dimensions = 3; break;
-    case SPLINE_3D_MULTICHANNEL:         n_parameters = 5; n_dimensions = 4; break;
-    case SPLINE_3D_PHASE_MULTICHANNEL:   n_parameters = 6; n_dimensions = 4; break;
-    case LORENTZ_1D:              n_parameters = 4; n_dimensions = 1; break;
-    case LORENTZ_1D_DOUBLE:              n_parameters = 4*2; n_dimensions = 1; break;
-    case LORENTZ_1D_OCTET:              n_parameters = 4*8; n_dimensions = 1; break;
+    case GAUSS_1D:                          n_parameters = 4; n_dimensions = 1; break;
+    case GAUSS_2D:                          n_parameters = 5; n_dimensions = 2; break;
+    case GAUSS_2D_ELLIPTIC:                 n_parameters = 6; n_dimensions = 2; break;
+    case GAUSS_2D_ROTATED:                  n_parameters = 7; n_dimensions = 2; break;
+    case CAUCHY_2D_ELLIPTIC:                n_parameters = 6; n_dimensions = 2; break;
+    case LINEAR_1D:                         n_parameters = 2; n_dimensions = 1; break;
+    case FLETCHER_POWELL_HELIX:             n_parameters = 3; n_dimensions = 1; break;
+    case BROWN_DENNIS:                      n_parameters = 4; n_dimensions = 1; break;
+    case SPLINE_1D:                         n_parameters = 3; n_dimensions = 1; break;
+    case SPLINE_2D:                         n_parameters = 4; n_dimensions = 2; break;
+    case SPLINE_3D:                         n_parameters = 5; n_dimensions = 3; break;
+    case SPLINE_3D_MULTICHANNEL:            n_parameters = 5; n_dimensions = 4; break;
+    case SPLINE_3D_PHASE_MULTICHANNEL:      n_parameters = 6; n_dimensions = 4; break;
+    case LORENTZ_1D:                        n_parameters = 4; n_dimensions = 1; break;
+    case LORENTZ_1D_DOUBLE:                 n_parameters = 4*2; n_dimensions = 1; break;
+    case LORENTZ_1D_OCT:                    n_parameters = 4*8; n_dimensions = 1; break;
+    case LORENTZ_1D_OCT_SINGLE_OFFSET:      n_parameters = 3*8 + 1; n_dimensions = 1; break;
+    case LORENTZ_1D_DOUBLE_SINGLE_OFFSET:   n_parameters = 3*2 + 1; n_dimensions = 1; break;
+    case LORENTZ_1D_TRIPLE:                 n_parameters = 4*3; n_dimensions = 1; break;
+    case LORENTZ_1D_QUAD:                   n_parameters = 4*4; n_dimensions = 1; break;
+    case GAUSS_1D_DOUBLE:                   n_parameters = 4*2; n_dimensions = 1; break;
+    case DOUBLE_EXPONENTIAL_DECAY_1D:       n_parameters = 3*2 + 1; n_dimensions = 1; break;
+    case SINGLE_EXPONENTIAL_DECAY_1D:       n_parameters = 3*1 + 1; n_dimensions = 1; break;
     default: throw std::runtime_error("unknown model ID");
     }
 }

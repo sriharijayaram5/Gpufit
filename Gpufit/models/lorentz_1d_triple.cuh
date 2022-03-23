@@ -1,7 +1,7 @@
-#ifndef GPUFIT_LORENTZ1D_CUH_INCLUDED
-#define GPUFIT_LORENTZ1D_CUH_INCLUDED
+#ifndef GPUFIT_LORENTZ_1D_TRIPLE_CUH_INCLUDED
+#define GPUFIT_LORENTZ_1D_TRIPLE_CUH_INCLUDED
 
-/* Description of the calculate_loentz1d function
+/* Description of the calculate_loentz1d_ntet function
 * ==============================================
 *
 * This function calculates the values of one-dimensional lorentzian model functions
@@ -68,7 +68,7 @@
 *
 */
 
-__device__ void calculate_lorentz1d(
+__device__ void calculate_lorentz_1d_triple(
     REAL const * parameters,
     int const n_fits,
     int const n_points,
@@ -104,8 +104,9 @@ __device__ void calculate_lorentz1d(
     REAL const * p = parameters;
     
     // value
+    // REAL const ex_2 =  ((p[2+(n*4)] * p[2+(n*4)]) / (((x - p[1+(n*4)]) * (x - p[1+(n*4)])) + (p[2+(n*4)] * p[2+(n*4)])));
 
-    const int N = 1;
+	const int N = 3;
     float *ex_n = new float[N];
     value[point_index] = 0;
     for (int n = 0; n < N; n++){
@@ -124,12 +125,14 @@ __device__ void calculate_lorentz1d(
 
     for (int n = 0; n < N; n++){
         current_derivative[(0+(n*4)) * n_points]  = ex_n[n];
-        current_derivative[(1+(n*4)) * n_points]  = (2.0 * p[0+(n*4)] * p[2+(n*4)] * p[2+(n*4)]) * (x - p[1+(n*4)]) / ((((x - p[1+(n*4)]) * (x - p[1+(n*4)])) + (p[2+(n*4)] * p[2+(n*4)])) * (((x - p[1+(n*4)]) * (x - p[1+(n*4)])) + (p[2+(n*4)] * p[2+(n*4)])));
+        current_derivative[(1+(n*4)) * n_points]  = (2.0 * p[0+(n*4)] * p[2+(n*4)] * p[2+(n*4)]) * (x - p[1+(n*4)])/ ((((x - p[1+(n*4)]) * (x - p[1+(n*4)])) + (p[2+(n*4)] * p[2+(n*4)])) * (((x - p[1+(n*4)]) * (x - p[1+(n*4)])) + (p[2+(n*4)] * p[2+(n*4)])));
         current_derivative[(2+(n*4)) * n_points]  = 2.0 * p[0+(n*4)] * p[2+(n*4)] * ((p[1+(n*4)] - x) * (p[1+(n*4)] - x)) / ((((p[1+(n*4)] - x) * (p[1+(n*4)] - x)) + (p[2+(n*4)] * p[2+(n*4)])) * (((p[1+(n*4)] - x) * (p[1+(n*4)] - x)) + (p[2+(n*4)] * p[2+(n*4)])));
         current_derivative[(3+(n*4)) * n_points]  = 1.0;
     };
 
 	delete [] ex_n;
+
+  
 }
 
 #endif

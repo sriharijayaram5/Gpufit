@@ -1,5 +1,5 @@
-#ifndef GPUFIT_LORENTZ1D_CUH_INCLUDED
-#define GPUFIT_LORENTZ1D_CUH_INCLUDED
+#ifndef GPUFIT_LORENTZ_1D_DOUBLE_CUH_INCLUDED
+#define GPUFIT_LORENTZ_1D_DOUBLE_CUH_INCLUDED
 
 /* Description of the calculate_loentz1d function
 * ==============================================
@@ -68,7 +68,7 @@
 *
 */
 
-__device__ void calculate_lorentz1d(
+__device__ void calculate_lorentz_1d_double(
     REAL const * parameters,
     int const n_fits,
     int const n_points,
@@ -106,9 +106,13 @@ __device__ void calculate_lorentz1d(
     // value
     // REAL const ex_2 =  ((p[2+(n*4)] * p[2+(n*4)]) / (((x - p[1+(n*4)]) * (x - p[1+(n*4)])) + (p[2+(n*4)] * p[2+(n*4)])));
 
-    REAL const ex_1 =  ((p[2] * p[2]) / (((x - p[1]) * (x - p[1])) + (p[2] * p[2])));
-    REAL const ex_2 =  ((p[2+(1*4)] * p[2+(1*4)]) / (((x - p[1+(1*4)]) * (x - p[1+(1*4)])) + (p[2+(1*4)] * p[2+(1*4)])));
-    value[point_index] = (p[0] * ex_1 + p[3]) + (p[0+(1*4)] * ex_2 + p[3+(1*4)]);
+    const int N = 2;
+    float *ex_n = new float[N];
+    value[point_index] = 0;
+    for (int n = 0; n < N; n++){
+        ex_n[n] =  ((p[2+(n*4)] * p[2+(n*4)]) / (((x - p[1+(n*4)]) * (x - p[1+(n*4)])) + (p[2+(n*4)] * p[2+(n*4)])));
+        value[point_index] += (p[0+(n*4)] * ex_n[n] + p[3+(n*4)]);
+    };
 
     // derivative
 
@@ -119,15 +123,14 @@ __device__ void calculate_lorentz1d(
     // current_derivative[2 * n_points]  = 2 * p[0+(n*4)] * p[2+(n*4)] * (((p[1+(n*4)] - x) * (p[1+(n*4)] - x)) * ((p[1+(n*4)] - x) * (p[1+(n*4)] - x))) / (  ( (((p[1+(n*4)] - x) * (p[1+(n*4)] - x)) * ((p[1+(n*4)] - x) * (p[1+(n*4)] - x))) + (p[2+(n*4)] * p[2+(n*4)]) ) * ( (((p[1+(n*4)] - x) * (p[1+(n*4)] - x)) * ((p[1+(n*4)] - x) * (p[1+(n*4)] - x))) + (p[2+(n*4)] * p[2+(n*4)]) ));
     // current_derivative[3 * n_points]  = 1;
 
-    current_derivative[0 * n_points]  = ex_1;
-    current_derivative[1 * n_points]  = (2 * p[0] * p[2] * p[2]) * (x - p[1])/ ((((x - p[1]) * (x - p[1])) + (p[2] * p[2])) * (((x - p[1]) * (x - p[1])) + (p[2] * p[2])));
-    current_derivative[2 * n_points]  = 2 * p[0] * p[2] * (((p[1] - x) * (p[1] - x)) * ((p[1] - x) * (p[1] - x))) / (  ( (((p[1] - x) * (p[1] - x)) * ((p[1] - x) * (p[1] - x))) + (p[2] * p[2]) ) * ( (((p[1] - x) * (p[1] - x)) * ((p[1] - x) * (p[1] - x))) + (p[2] * p[2]) ));
-    current_derivative[3 * n_points]  = 1;
+    for (int n = 0; n < N; n++){
+        current_derivative[(0+(n*4)) * n_points]  = ex_n[n];
+        current_derivative[(1+(n*4)) * n_points]  = (2.0 * p[0+(n*4)] * p[2+(n*4)] * p[2+(n*4)]) * (x - p[1+(n*4)]) / ((((x - p[1+(n*4)]) * (x - p[1+(n*4)])) + (p[2+(n*4)] * p[2+(n*4)])) * (((x - p[1+(n*4)]) * (x - p[1+(n*4)])) + (p[2+(n*4)] * p[2+(n*4)])));
+        current_derivative[(2+(n*4)) * n_points]  = 2.0 * p[0+(n*4)] * p[2+(n*4)] * ((p[1+(n*4)] - x) * (p[1+(n*4)] - x)) / ((((p[1+(n*4)] - x) * (p[1+(n*4)] - x)) + (p[2+(n*4)] * p[2+(n*4)])) * (((p[1+(n*4)] - x) * (p[1+(n*4)] - x)) + (p[2+(n*4)] * p[2+(n*4)])));
+        current_derivative[(3+(n*4)) * n_points]  = 1.0;
+    };
 
-    current_derivative[4 * n_points]  = ex_2;
-    current_derivative[5 * n_points]  = (2 * p[0+(1*4)] * p[2+(1*4)] * p[2+(1*4)]) * (x - p[1+(1*4)])/ ((((x - p[1+(1*4)]) * (x - p[1+(1*4)])) + (p[2+(1*4)] * p[2+(1*4)])) * (((x - p[1+(1*4)]) * (x - p[1+(1*4)])) + (p[2+(1*4)] * p[2+(1*4)])));
-    current_derivative[6 * n_points]  = 2 * p[0+(1*4)] * p[2+(1*4)] * (((p[1+(1*4)] - x) * (p[1+(1*4)] - x)) * ((p[1+(1*4)] - x) * (p[1+(1*4)] - x))) / (  ( (((p[1+(1*4)] - x) * (p[1+(1*4)] - x)) * ((p[1+(1*4)] - x) * (p[1+(1*4)] - x))) + (p[2+(1*4)] * p[2+(1*4)]) ) * ( (((p[1+(1*4)] - x) * (p[1+(1*4)] - x)) * ((p[1+(1*4)] - x) * (p[1+(1*4)] - x))) + (p[2+(1*4)] * p[2+(1*4)]) ));
-    current_derivative[7 * n_points]  = 1;
+	delete [] ex_n;
 }
 
 #endif
